@@ -43,5 +43,6 @@ Perform desired tasks such as adding employees, managing leave requests, applyin
 Log out from the application when done.
 
 Contributors
+Konstantinos Papadimitriou
 Athanasios Maltsios 
 MaCmilan Andreas

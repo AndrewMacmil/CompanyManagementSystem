@@ -15,9 +15,8 @@ class CompanyManagementApp:
         self.db_connection = sqlite3.connect('company_database.db')
         self.current_user = None
 
-        #  buttons with updated styles
+        # buttons with updated styles
         button_style = {
-
             'bg': '#8BC34A',  # Light green color
             'fg': '#333',  # Dark text color
             'border': 0,  # No border
@@ -38,12 +37,11 @@ class CompanyManagementApp:
         self.exit_button = tk.Button(root, text="Exit", command=self.root.destroy, **button_style)
         self.exit_button.pack(pady=10)
 
-
     def admin_login(self):
         admin_window = tk.Toplevel(self.root)
         admin_window.title("Administrator Login")
 
-        #  widgets for username and password
+        # widgets for username and password
         username_label = tk.Label(admin_window, text="Username:")
         username_label.grid(row=0, column=0, pady=10)
 
@@ -56,7 +54,7 @@ class CompanyManagementApp:
         password_entry = tk.Entry(admin_window, show="*")
         password_entry.grid(row=1, column=1, pady=10)
 
-        #  login button
+        # login button
         login_button = tk.Button(admin_window, text="Login",
                                  command=lambda: self.admin_login_handler(admin_window, username_entry.get(),
                                                                           password_entry.get()))
@@ -101,7 +99,7 @@ class CompanyManagementApp:
         add_employee_window = tk.Toplevel(self.root)
         add_employee_window.title("Add Employee")
 
-        #  widgets for employee details
+        # widgets for employee details
         name_label = tk.Label(add_employee_window, text="Name:")
         name_label.grid(row=0, column=0, pady=10)
 
@@ -120,7 +118,7 @@ class CompanyManagementApp:
         salary_entry = tk.Entry(add_employee_window)
         salary_entry.grid(row=2, column=1, pady=10)
 
-        #  add employee button
+        # add employee button
         add_button = tk.Button(add_employee_window, text="Add Employee",
                                command=lambda: self.add_employee_handler(add_employee_window, name_entry.get(),
                                                                          password_entry.get(), salary_entry.get()))
@@ -137,7 +135,7 @@ class CompanyManagementApp:
         view_all_employees_window = tk.Toplevel(self.root)
         view_all_employees_window.title("Employees")
 
-        #  widget to display all employees
+        # widget to display all employees
         all_employees_tree = ttk.Treeview(view_all_employees_window, columns=('Employee ID', 'Name', 'Salary',
                                                                               'Leave Balance', 'Grievances'))
         all_employees_tree.heading('Employee ID', text='Employee ID')
@@ -189,7 +187,7 @@ class CompanyManagementApp:
         salary_entry = tk.Entry(modify_employee_window)
         salary_entry.grid(row=3, column=1, pady=10)
 
-        #  modify employee button
+        # modify employee button
         modify_button = tk.Button(modify_employee_window, text="Modify Employee",
                                   command=lambda: self.modify_employee_handler(id_entry.get(), name_entry.get(),
                                                                                password_entry.get(),
@@ -207,7 +205,7 @@ class CompanyManagementApp:
         self.leave_management_window = tk.Toplevel(self.root)
         self.leave_management_window.title("Leave Management")
 
-        #  treeview widget to display leave requests
+        # Treeview widget to display leave requests
         leave_tree = ttk.Treeview(self.leave_management_window,
                                   columns=('Leave ID', 'Employee ID', 'Leave Type', 'Start Date', 'End Date', 'Status'))
         leave_tree.heading('#0', text='Leave ID')
@@ -220,22 +218,21 @@ class CompanyManagementApp:
 
         leave_tree.pack(pady=10)
 
-        # leave requests from the database
+        # Fetch leave requests from the database
         cursor = self.db_connection.cursor()
         cursor.execute('SELECT * FROM leave_applications')
         leave_requests = cursor.fetchall()
 
-        #  leave requests into the treeview
+        # Insert leave requests into the treeview
         for leave_request in leave_requests:
             try:
                 leave_tree.insert('', 'end', text=leave_request[0], values=(
                     leave_request[0], leave_request[1], leave_request[2], leave_request[3], leave_request[4],
                     leave_request[5]))
             except IndexError as e:
-                # Handle the case where the leave_request tuple doesn't have enough elements
                 print(f"Error processing leave request: {e}")
 
-        #  approve and reject buttons
+        # Approve and reject buttons
         approve_button = tk.Button(self.leave_management_window, text="Approve Leave",
                                    command=lambda: self.approve_leave(leave_tree))
         approve_button.pack(pady=10)
@@ -244,6 +241,11 @@ class CompanyManagementApp:
                                   command=lambda: self.reject_leave(leave_tree))
         reject_button.pack(pady=10)
 
+        # Button to delete selected leave applications
+        delete_button = tk.Button(self.leave_management_window, text="Delete Selected Leave Applications",
+                                  command=lambda: self.delete_leave_application(leave_tree))
+        delete_button.pack(pady=10)
+
     def view_personal_details(self, emp_id):
         # personal details from the database
         cursor = self.db_connection.cursor()
@@ -251,7 +253,7 @@ class CompanyManagementApp:
         emp_data = cursor.fetchone()
 
         if emp_data:
-            #  new window to display personal details using Treeview
+            # new window to display personal details using Treeview
             personal_details_window = tk.Toplevel(self.root)
             personal_details_window.title("Personal Details")
 
@@ -267,8 +269,34 @@ class CompanyManagementApp:
                 personal_details_tree.insert('', 'end', text=attr, values=(value,))
 
             personal_details_tree.pack(pady=10)
+
+            # Add a button to delete the grievance
+            delete_grievance_button = tk.Button(personal_details_window, text="Delete Grievance",
+                                                command=lambda: self.delete_grievance(emp_id))
+            delete_grievance_button.pack(pady=10)
         else:
             messagebox.showerror("Error", "Failed to retrieve personal details.")
+
+    def delete_grievance(self, emp_id):
+        cursor = self.db_connection.cursor()
+        cursor.execute('UPDATE employees SET grievances=NULL WHERE id=?', (emp_id,))
+        self.db_connection.commit()
+        messagebox.showinfo("Grievance Deleted", "Your grievance has been deleted successfully!")
+
+    def delete_leave_application(self, leave_tree):
+        selected_items = leave_tree.selection()
+
+        if selected_items:
+            for selected_item in selected_items:
+                leave_id = leave_tree.item(selected_item, 'text')
+                cursor = self.db_connection.cursor()
+                cursor.execute('DELETE FROM leave_applications WHERE leave_id=?', (leave_id,))
+                self.db_connection.commit()
+                leave_tree.delete(selected_item)
+            messagebox.showinfo("Leave Deleted", "Selected leave application(s) deleted successfully.")
+        else:
+            messagebox.showwarning("Select Leave Application",
+                                   "Please select one or more leave applications to delete.")
 
     def approve_leave(self, leave_tree):
         selected_item = leave_tree.selection()
@@ -431,8 +459,19 @@ class CompanyManagementApp:
                 personal_details_tree.insert('', 'end', text=attr, values=(value,))
 
             personal_details_tree.pack(pady=10)
+
+            # Add a button to delete the grievance
+            delete_grievance_button = tk.Button(personal_details_window, text="Delete Grievance",
+                                                command=lambda: self.delete_grievance(emp_id))
+            delete_grievance_button.pack(pady=10)
         else:
             messagebox.showerror("Error", "Failed to retrieve personal details.")
+
+    def delete_grievance(self, emp_id):
+        cursor = self.db_connection.cursor()
+        cursor.execute('UPDATE employees SET grievances=NULL WHERE id=?', (emp_id,))
+        self.db_connection.commit()
+        messagebox.showinfo("Grievance Deleted", "Your grievance has been deleted successfully!")
 
     def apply_for_leave(self):
         leave_application_window = tk.Toplevel(self.root)
@@ -494,7 +533,7 @@ class CompanyManagementApp:
             cursor.execute('SELECT id FROM employees WHERE name = ?', (self.current_user.get('username', ''),))
             employee_id = cursor.fetchone()
 
-            if employee_id:
+            if (employee_id is not None) and (len(employee_id) > 0):
                 return employee_id[0]
             else:
                 # Log the error or raise an exception

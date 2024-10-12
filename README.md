@@ -45,4 +45,4 @@ Log out from the application when done.
 Contributors
 Konstantinos Papadimitriou
 Athanasios Maltsios 
-MaCmilan Andreas
+Macmillan Andreas Kenneth
